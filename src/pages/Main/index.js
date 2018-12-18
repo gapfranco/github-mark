@@ -5,7 +5,7 @@ import { connect } from 'react-redux'
 // import moment from 'moment'
 
 import { bindActionCreators } from 'redux'
-import * as reposActions from '../../store/actions/repos'
+import { Creators as reposActions } from '../../store/ducks/repos'
 
 // import api from '../../services/api'
 import logo from '../../assets/logo.png'
@@ -14,13 +14,15 @@ import { Container, Form } from './styles'
 
 class Main extends Component {
   static propTypes = {
-    addRepos: PropTypes.func.isRequired,
+    addReposRequest: PropTypes.func.isRequired,
     removeRepos: PropTypes.func.isRequired,
-    repositories: PropTypes.arrayOf(
-      PropTypes.shape({
-        id: PropTypes.number,
-        name: PropTypes.string,
-        owner: PropTypes.shape({
+    repositories: PropTypes.shape({
+      loading: PropTypes.bool,
+      error: PropTypes.oneOfType([null, PropTypes.string]),
+      data: PropTypes.arrayOf(
+        PropTypes.shape({
+          id: PropTypes.number,
+          name: PropTypes.string,
           login: PropTypes.string,
           avatar_url: PropTypes.string,
           stargazers_count: PropTypes.number,
@@ -28,9 +30,10 @@ class Main extends Component {
           open_issues_count: PropTypes.number,
           pushed_at: PropTypes.string
         })
-      })
-    ).isRequired
+      ).isRequired
+    })
   }
+
   componentWillMount () {
     this.setState({
       loading: false,
@@ -42,22 +45,8 @@ class Main extends Component {
 
   handleAddRepository = async e => {
     e.preventDefault()
-    // r.lastCommit = moment(r.pushed_at).fromNow()
     this.props.addReposRequest(this.state.repositoryInput)
-    // this.setState({ loading: true })
-    // try {
-    //   const { data: repository } = await api.get(`repos/${this.state.repositoryInput}`)
-    //   repository.lastCommit = moment(repository.pushed_at).fromNow()
-    //   this.setState({
-    //     repositoryInput: '',
-    //     repositoryError: false,
-    //     repositories: [...this.state.repositories, repository]
-    //   })
-    // } catch (err) {
-    //   this.setState({ repositoryError: true })
-    // } finally {
-    //   this.setState({ loading: false })
-    // }
+    this.setState({ repositoryInput: '' })
   }
 
   handleRemoveRepository = id => {
@@ -65,12 +54,11 @@ class Main extends Component {
   }
 
   render () {
-    console.log(this.props)
     return (
       <Container>
         <img src={logo} alt='Github mark' />
 
-        <Form withError={this.state.repositoryError} onSubmit={this.handleAddRepository}>
+        <Form withError={!!this.props.repositories.error} onSubmit={this.handleAddRepository}>
           <input
             type='text'
             placeholder='usuário/repositório'
@@ -78,11 +66,11 @@ class Main extends Component {
             onChange={e => this.setState({ repositoryInput: e.target.value })}
           />
           <button type='submit'>
-            {this.state.loading ? <i className='fa fa-spinner fa-pulse' /> : 'OK'}
+            {this.props.repositories.loading ? <i className='fa fa-spinner fa-pulse' /> : 'OK'}
           </button>
         </Form>
         <CompareList
-          repositories={this.props.repositories}
+          repositories={this.props.repositories.data}
           removeRepos={this.handleRemoveRepository}
         />
       </Container>
